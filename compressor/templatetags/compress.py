@@ -85,10 +85,17 @@ class CompressorMixin(object):
 
     def render_compressed(self, context, kind, mode, forced=False):
 
-        # See if it has been rendered offline
-        cached_offline = self.render_offline(context, forced=forced)
-        if cached_offline:
-            return cached_offline
+        try:
+            # See if it has been rendered offline
+            cached_offline = self.render_offline(context, forced=forced)
+            if cached_offline:
+                return cached_offline
+
+        except OfflineGenerationError:
+            # If offline compression fallback is not allowed,
+            #  raise the exception, otherwise fall back to generation.
+            if not settings.COMPRESS_OFFLINE_ALLOW_FALLBACK:
+                raise
 
         # Take a shortcut if we really don't have anything to do
         if ((not settings.COMPRESS_ENABLED and
